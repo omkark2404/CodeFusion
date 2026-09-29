@@ -80,7 +80,6 @@ function handleDisconnect(io, socket) {
     // Check if room is empty
     const clients = io.sockets.adapter.rooms.get(roomId);
     if (!clients || clients.size === 0) {
-      console.log(`[Cleanup] Room ${roomId} is empty. Cleaning up memory.`);
       deleteRoomCode(roomId);
       deleteHistory(roomId);
       clearRateLimit(roomId);
@@ -88,7 +87,6 @@ function handleDisconnect(io, socket) {
       roomColorIndex.delete(roomId);
     }
   }
-  console.log("User disconnected:", socket.id);
 }
 
 module.exports = {
