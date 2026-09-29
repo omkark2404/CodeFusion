@@ -14,8 +14,6 @@ function handleVoiceJoin(io, socket, roomId) {
     (id) => id !== socket.id
   );
   socket.emit("voice:participants", participants);
-
-  console.log(`[Voice] ${socket.id} joined voice in room ${roomId}`);
 }
 
 function handleVoiceOffer(socket, { targetId, offer }) {
@@ -45,7 +43,6 @@ function handleVoiceLeave(io, socket, roomId) {
     if (voiceRooms.get(roomId).size === 0) voiceRooms.delete(roomId);
   }
   socket.to(roomId).emit("voice:user-left", { socketId: socket.id });
-  console.log(`[Voice] ${socket.id} left voice in room ${roomId}`);
 }
 
 // Called on disconnect to clean up voice state

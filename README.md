@@ -1,207 +1,104 @@
-# CodeSync — Real-time Collaborative Code Editor
+# CodeFusion
+![CI Status](https://github.com/omkark2404/CodeFusion/actions/workflows/ci.yml/badge.svg)
 
-A real-time collaborative code editor with **Text Chat**, **Voice Chat (WebRTC)**, and **Multi-language Code Execution** built with React, Node.js, Express, and Socket.IO.
+> A real-time collaborative coding platform designed for seamless pair programming and remote interviews.
 
-## 🌐 Live Demo
-**[https://codesync-clients.onrender.com](https://codesync-clients.onrender.com)**
+## 🚀 The Problem & Solution
+While many collaborative editors exist (like Google Docs), they lack robust developer tools. CodeFusion bridges this gap by offering a fully synced Monaco editor, integrated WebRTC voice chat, and secure, sandboxed Remote Code Execution (RCE) in a single browser window. This eliminates the need for separate screen-sharing, communication, and execution tools during pair programming sessions.
 
----
+## ✨ Key Features
+- **Real-time Code Sync:** Millisecond-latency code broadcasting via Socket.IO.
+- **Multi-User Cursors:** See exactly where your team members are typing with live cursor tracking.
+- **Remote Code Execution (RCE):** Safely compile and run JS, Python, Java, C++, and C with standard input (stdin) support. Execution is heavily sandboxed using Docker (Judge0) with fallbacks to Piston and Wandbox APIs.
+- **Integrated Voice & Text Chat:** WebRTC-powered peer-to-peer audio and a persistent room text chat (no external tools required).
 
-## ✨ Features
+## 🛠 Tech Stack
+- **Frontend:** React 18, Monaco Editor, Socket.IO Client, WebRTC
+- **Backend:** Node.js, Express, Socket.IO
+- **Execution Engine:** Judge0 (Dockerized self-hosted) + Piston/Wandbox API fallbacks
+- **CI/CD:** GitHub Actions (Linting & Testing)
 
-- 🔴 **Real-time code sync** — changes broadcast instantly to all room members
-- 👥 **Multi-user cursors** — see where each collaborator's cursor is live
-- 🎨 **Syntax highlighting** — Monaco Editor with a warm dark theme
-- 🌐 **Language switcher** — JavaScript, Python, Java, C++, C
-- 💬 **Text Chat** — room-scoped chat with message history (last 50 messages)
-- 🎙 **Voice Chat** — WebRTC peer-to-peer audio with speaking detection indicators
-- ▶ **Run Code** — execute code with stdin support via self-hosted Judge0
-- 📥 **Stdin Input** — pass custom input to programs that use `input()` / `scanf`
-
----
-
-## ⚙️ Code Execution
-
-CodeSync runs a **self-hosted Judge0 instance via Docker** — both locally and in production on Render.
-
-### Architecture
-
+## 🏗 Architecture
+```mermaid
+graph TD
+    Client[React Client (Browser)]
+    Backend[Node.js / Express Server]
+    Judge0[Judge0 Sandbox / Docker]
+    Wandbox[Wandbox API]
+    Piston[Piston API]
+    
+    Client <-->|Socket.IO (Code, Chat, Cursors)| Backend
+    Client <-->|WebRTC (P2P Voice)| Client
+    Backend -->|Execute Code| Judge0
+    Backend -->|Fallback| Piston
+    Backend -->|Fallback| Wandbox
 ```
-Judge0 (Docker)
-├── judge0/judge0:1.13.0   — API server (port 2358) + worker containers
-├── postgres:13            — submission database
-└── redis:6                — job queue
-```
+- **`client/`**: React SPA handling the editor (Monaco), WebRTC signaling, and socket events.
+- **`server/`**: Express API & Socket.IO server. Handles room state, memory-leak-safe cleanup on disconnect, payload validation, and routes execution requests.
 
-Judge0 spins up an **isolated container per code submission** — fully sandboxed, no shared state between runs.
-
-### Three-Provider Fallback (if Judge0 is unavailable)
-
-If Judge0 is down or unreachable, the server automatically falls back:
-
-| Priority | Provider | Description |
-|---|---|---|
-| 1st | **Piston** | emkc.org — free, no auth |
-| 2nd | **Wandbox** | wandbox.org — free, many compilers |
-| 3rd | **Codex** | api.codex.jaagrav.in — free fallback |
-
-### Supported Languages
-
-| Language | Runtime |
-|---|---|
-| Python | CPython 3.12 |
-| JavaScript | Node.js 20 |
-| Java | OpenJDK 22 |
-| C++ | GCC 13 |
-| C | GCC 13 |
-
----
-
-## 🌍 Production Deployment (Render)
-
-Three services deployed on Render:
-
-| Service | Runtime | Role |
-|---|---|---|
-| `CodeSync` | **Docker** | Self-hosted Judge0 execution engine |
-| `CodeSync-servers` | Node | Express + Socket.IO backend |
-| `CodeSync-clients` | Static | React frontend |
-
-All services auto-deploy on every push to `main`.
-
----
-
-## 🏗 Project Structure (MVC)
-
-```
-CodeSync/
-├── client/                              # React frontend
-│   └── src/
-│       ├── config/
-│       │   └── editorConfig.js          # Monaco WARM_THEME, STARTER_CODE
-│       ├── utils/
-│       │   └── helpers.js               # generateId(), getInitials()
-│       ├── services/
-│       │   └── socketService.js         # Socket.IO connection factory
-│       ├── hooks/
-│       │   ├── useSocket.js             # Socket events & state management
-│       │   ├── useCodeRunner.js         # Code execution with stdin support
-│       │   ├── useChat.js               # Chat state & events
-│       │   ├── useVoiceChat.js          # WebRTC voice logic
-│       │   └── useEditorDecorations.js  # Monaco remote cursor decorations
-│       ├── components/
-│       │   ├── TopBar.js
-│       │   ├── CursorPanel.js
-│       │   ├── CursorLabel.js
-│       │   ├── StatusBar.js
-│       │   ├── Chat/ChatPanel.js
-│       │   ├── Output/OutputPanel.js    # Output + stdin input box
-│       │   ├── Toolbar/RunButton.js
-│       │   └── VoiceChat/VoicePanel.js
-│       ├── pages/
-│       │   ├── JoinPage.js
-│       │   └── EditorPage.js
-│       ├── App.js
-│       ├── App.css
-│       └── index.js
-│
-└── server/                              # Node.js backend
-    ├── config/
-    │   └── constants.js
-    ├── models/
-    │   └── roomModel.js
-    ├── controllers/
-    │   ├── socketController.js
-    │   ├── codeController.js            # Judge0 + fallback chain
-    │   ├── chatController.js
-    │   └── voiceController.js
-    ├── routes/
-    │   └── healthRoutes.js
-    ├── middleware/
-    │   └── errorHandler.js
-    ├── docker-compose.yml               # Judge0 + PostgreSQL + Redis
-    ├── app.js
-    ├── socket.js
-    └── index.js
-```
-
----
-
-## 🚀 Local Setup
+## ⚙️ Setup & Installation
 
 ### Prerequisites
-- Node.js v16+
-- npm
-- Docker + Docker Compose
+- Node.js v18+
+- Docker & Docker Compose (for local Judge0 execution)
 
-### 1. Start Judge0 via Docker
+### 1. Clone & Install
+```bash
+git clone https://github.com/omkark2404/CodeFusion.git
+cd CodeFusion
 
+# Install Server dependencies
+cd server
+npm install
+
+# Install Client dependencies
+cd ../client
+npm install
+```
+
+### 2. Environment Variables
+In the `server` directory, copy the example env file:
+```bash
+cd server
+cp .env.example .env
+```
+*(Optionally, update `.env` with your desired configuration).*
+
+### 3. Run the Services
+**Start the local Judge0 Engine (Docker):**
 ```bash
 cd server
 docker-compose up -d
 ```
 
-Wait ~30 seconds, then verify Judge0 is running:
-```
-http://localhost:2358/system_info
-```
-
-### 2. Environment Variables
-
-Create `server/.env`:
-```env
-PORT=5000
-JUDGE0_URL=http://localhost:2358
-```
-
-### 3. Install Dependencies
-
+**Start the Backend:**
 ```bash
-cd server && npm install
-cd ../client && npm install
+cd server
+npm run dev
 ```
 
-### 4. Run the App
-
+**Start the Frontend:**
 ```bash
-# Terminal 1 — backend
-cd server && node index.js
+cd client
+npm start
+```
+The app will open at `http://localhost:3000`.
 
-# Terminal 2 — frontend
-cd client && npm start
+## 📸 Preview / Demo
+- **Live Demo:** [https://codesync-clients.onrender.com](https://codesync-clients.onrender.com)
+
+## 🧪 Running Tests
+The server includes a Jest test suite for the data models and core logic.
+```bash
+cd server
+npm test
 ```
 
-App runs at **http://localhost:3000**
+## 🧠 Design Decisions & Trade-offs
+- **In-Memory State:** Room state and chat history are currently stored in memory (`Map` objects). This ensures blazing-fast read/writes for real-time collaboration. The trade-off is that server restarts clear all active rooms. A future improvement would be backing this with Redis.
+- **WebRTC over SFU:** Voice chat uses a mesh P2P WebRTC topology. This keeps infrastructure costs to zero and works flawlessly for small teams (2-5 people), but would not scale to 50+ users in a single room (which would require an SFU like mediasoup).
+- **Security:** We completely removed local `child_process` execution in favor of strictly using isolated Docker containers (Judge0) or external sandboxed APIs (Piston) to prevent RCE vulnerabilities.
 
----
-
-## 🔌 Socket Events
-
-| Event | Direction | Description |
-|---|---|---|
-| `join_room` | Client → Server | Join a room with username |
-| `send_code` | Client → Server | Broadcast code change |
-| `cursor_move` | Client → Server | Broadcast cursor position |
-| `code:run` | Client → Server | Execute code with stdin |
-| `code:output` | Server → Client | Execution result (stdout/stderr) |
-| `code:error` | Server → Client | Execution error message |
-| `receive_code` | Server → Client | Synced code from server |
-| `remote_cursor` | Server → Client | Remote cursor position |
-| `user_joined` | Server → Client | New user notification |
-| `user_left` | Server → Client | User disconnected notification |
-| `room_users` | Server → Client | List of room members |
-| `assigned_color` | Server → Client | User's assigned cursor color |
-
----
-
-## 🌐 Browser Support
-
-Voice Chat (WebRTC) requires HTTPS in production and a modern browser:
-- ✅ Chrome 74+, Firefox 70+, Edge 79+, Safari 14.1+
-- ❌ Not supported over plain HTTP (except localhost)
-
----
-
-## 📄 License
-
-MIT
+## 👤 Author
+**Shashank**
+- GitHub: [@omkark2404](https://github.com/omkark2404)

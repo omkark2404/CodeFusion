@@ -216,18 +216,15 @@ async function handleRunCode(io, socket, { code, language, roomId, stdin = "", u
   ];
 
   let lastErr;
-  for (const { name, fn } of providers) {
+  for (const { fn } of providers) {
     try {
       const result = await fn();
-      console.log(`[CodeRunner] ${name} succeeded`);
       return io.to(roomId).emit("code:output", { ...result, time: null, memory: null });
     } catch (err) {
       lastErr = err;
-      console.warn(`[CodeRunner] ${name} failed: ${err.message}`);
     }
   }
 
-  console.error("[CodeRunner] All providers failed:", lastErr?.message);
   io.to(roomId).emit("code:error", { message: `Code execution failed: ${lastErr?.message}` });
 }
 
