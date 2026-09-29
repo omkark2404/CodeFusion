@@ -85,8 +85,7 @@ npm start
 The app will open at `http://localhost:3000`.
 
 ## 📸 Preview / Demo
-- **Live Demo:** [TODO: Insert Live Demo URL here]
-- **Screenshot:** ![TODO: Add a GIF or screenshot of the app in action](https://via.placeholder.com/800x400.png?text=TODO:+Add+App+Screenshot)
+- **Live Demo:** [https://codesync-clients.onrender.com](https://codesync-clients.onrender.com)
 
 ## 🧪 Running Tests
 The server includes a Jest test suite for the data models and core logic.
@@ -103,5 +102,3 @@ npm test
 ## 👤 Author
 **Shashank**
 - GitHub: [@omkark2404](https://github.com/omkark2404)
-- LinkedIn: [TODO: Insert LinkedIn URL]
-- Email: [TODO: Insert Email]
