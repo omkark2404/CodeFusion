@@ -208,11 +208,21 @@ async function handleRunCode(io, socket, { code, language, roomId, stdin = "", u
 
   io.to(roomId).emit("code:running", { username, stdin });
 
-  const providers = [
-    { name: "Judge0",  fn: () => runViaJudge0(code, language, stdin)  },
-    { name: "Piston",  fn: () => runViaPiston(code, language, stdin)  },
-    { name: "Wandbox", fn: () => runViaWandbox(code, language, stdin) },
-  ];
+  const providers = [];
+  
+  if (process.env.USE_JUDGE0 !== "false") {
+    providers.push({ name: "Judge0", fn: () => runViaJudge0(code, language, stdin) });
+  }
+  if (process.env.USE_PISTON !== "false") {
+    providers.push({ name: "Piston", fn: () => runViaPiston(code, language, stdin) });
+  }
+  if (process.env.USE_WANDBOX !== "false") {
+    providers.push({ name: "Wandbox", fn: () => runViaWandbox(code, language, stdin) });
+  }
+
+  if (providers.length === 0) {
+    return socket.emit("code:error", { message: "All code execution providers are disabled." });
+  }
 
   const logger = require("../utils/logger");
 

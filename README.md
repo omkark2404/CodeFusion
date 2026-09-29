@@ -14,28 +14,43 @@ While many collaborative editors exist, they lack robust developer tools out of 
 
 ## 📸 Preview / Demo
 - **Live Demo:** [https://codesync-clients.onrender.com](https://codesync-clients.onrender.com)
-- **Screenshot:** ![CodeFusion Demo](docs/demo.gif) *(TODO: Upload docs/demo.gif)*
+  - *Note: CodeFusion is hosted on a free Render instance. The backend spins down after inactivity and may take up to ~60 seconds to cold start.*
+- **Screenshot:** ![CodeFusion Demo](docs/demo.png) *(TODO: Upload docs/demo.png)*
 
 ## 🛠 Tech Stack
 - **Frontend:** React 18, Monaco Editor, Socket.IO Client, WebRTC
-- **Backend:** Node.js, Express, Socket.IO, Helmet
+- **Backend:** Node.js 18+, Express, Socket.IO, Helmet
 - **Execution Engine:** Judge0 (`isolate` sandbox) + Piston/Wandbox API fallbacks
 - **CI/CD:** GitHub Actions (Linting & Testing), Docker Compose
 
-## 🏗 Architecture
+## 🏗 Architecture & Code Execution Sequence
+Code execution requests follow a resilient fallback sequence to guarantee uptime even if the primary local engine crashes.
+
 ```mermaid
-graph TD
-    Client[React Client (Browser)]
-    Backend[Node.js / Express Server]
-    Judge0[Judge0 Sandbox / isolate]
-    Wandbox[Wandbox API]
-    Piston[Piston API]
-    
-    Client <-->|Socket.IO (Code, Chat, Cursors)| Backend
-    Client <-->|WebRTC (P2P Voice)| Client
-    Backend -->|Execute Code| Judge0
-    Backend -->|Fallback| Piston
-    Backend -->|Fallback| Wandbox
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Judge0
+    participant PistonAPI
+    participant WandboxAPI
+
+    User->>Frontend: Clicks "Run Code"
+    Frontend->>Backend: emit `code:run` (source, lang, stdin)
+    Backend->>Judge0: POST /submissions (Timeout: 8s)
+    alt Judge0 Success
+        Judge0-->>Backend: stdout/stderr
+    else Judge0 Offline or Timeout
+        Backend->>PistonAPI: POST /execute (Fallback 1)
+        alt Piston Success
+            PistonAPI-->>Backend: stdout/stderr
+        else Piston Offline
+            Backend->>WandboxAPI: POST /compile.json (Fallback 2)
+            WandboxAPI-->>Backend: stdout/stderr
+        end
+    end
+    Backend-->>Frontend: emit `code:output` (with executed Provider name)
+    Frontend-->>User: Display Results
 ```
 
 ## ⚙️ Environment Variables
@@ -44,6 +59,9 @@ graph TD
 |----------|---------|-------------|
 | `PORT` | 5000 | Backend listening port |
 | `CLIENT_ORIGIN` | `http://localhost:3000` | Allowed CORS origins (comma-separated) |
+| `USE_JUDGE0` | `true` | Toggle Judge0 primary execution engine |
+| `USE_PISTON` | `true` | Toggle Piston fallback |
+| `USE_WANDBOX` | `true` | Toggle Wandbox fallback |
 | `JUDGE0_URL` | `http://judge0-server:2358` | URL of the Judge0 execution engine |
 | `POSTGRES_USER` | `judge0` | Judge0 database username |
 | `POSTGRES_PASSWORD` | | Judge0 database password |
@@ -66,10 +84,6 @@ graph TD
 | `remote_cursor` | Server ➔ Client | Receive peer cursor positions |
 | `code:run` | Client ➔ Server | Trigger code execution |
 | `code:output` | Server ➔ Client | Receive execution stdout/stderr |
-| `chat:send` | Client ➔ Server | Send text chat message |
-| `chat:receive`| Server ➔ Client | Receive text chat message |
-| `voice:offer` / `voice:answer` | Client ➔ Server ➔ Client | WebRTC SDP signaling |
-| `voice:ice-candidate` | Client ➔ Server ➔ Client | WebRTC ICE candidate signaling |
 
 ## 🚀 Setup & Deployment
 ### Local Setup with Docker
@@ -90,11 +104,13 @@ Due to Judge0 requiring a privileged container (for `isolate` sandboxing feature
 - **Payload Limits:** Strict 100KB limits on code payloads and 10KB limits on standard input to prevent DOS attacks.
 - **Rate Limiting:** Users are rate-limited to 10 execution requests per minute to prevent abuse.
 - **Execution:** User code is strictly executed via the `isolate` Linux sandbox tool or isolated third-party APIs. No local host execution (`child_process.spawn`) is permitted.
-- **CORS:** Origins are strictly controlled via `CLIENT_ORIGIN` environment variables.
+- **Privacy Note:** When self-hosted Judge0 is unavailable, user-submitted code is sent to public third-party execution APIs (Piston, Wandbox). This behavior can be completely disabled via the `USE_PISTON` and `USE_WANDBOX` environment variables.
 
 ## 🧠 Design Decisions & Trade-offs
-- **In-Memory State:** Room state and chat history are currently stored in memory (`Map` objects). This ensures blazing-fast read/writes for real-time collaboration. The trade-off is that server restarts clear all active rooms. A future improvement would be backing this with Redis.
-- **WebRTC over SFU:** Voice chat uses a mesh P2P WebRTC topology. This keeps infrastructure costs to zero and works flawlessly for small teams (2-5 people), but would not scale to 50+ users in a single room (which would require an SFU like mediasoup).
+- **Real-time Sync Strategy:** The editor currently broadcasts the full document utilizing a **Last-Write-Wins (LWW)** strategy. While highly performant for small files, it introduces a race-condition risk if two users type simultaneously on the exact same line, leading to occasional cursor jumps.
+  - *Future Roadmap:* Integrate **Yjs** (CRDT) for conflict-free distributed editing.
+- **In-Memory State:** Room state and chat history are currently stored in memory (`Map` objects). The trade-off is that server restarts clear all active rooms. A future improvement would be backing this with Redis.
+- **WebRTC over SFU:** Voice chat uses a mesh P2P WebRTC topology. This keeps infrastructure costs to zero and works flawlessly for small teams (2-5 people), but would not scale to 50+ users in a single room.
 
 ## 👤 Author
 **Shashank**
