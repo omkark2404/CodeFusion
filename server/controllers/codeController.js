@@ -196,7 +196,7 @@ async function handleRunCode(io, socket, { code, language, roomId, stdin = "", u
     return socket.emit("code:error", { message: "Code payload too large." });
   }
 
-  if (typeof stdin !== 'string' || stdin.length > 100000) {
+  if (typeof stdin !== 'string' || stdin.length > 10000) {
     return socket.emit("code:error", { message: "Stdin payload too large." });
   }
 
