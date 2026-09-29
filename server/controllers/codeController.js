@@ -29,8 +29,8 @@ const WANDBOX_LANGS = {
 };
 
 // ── Codex (last resort) ───────────────────────────────────────────────────────
-const CODEX_URL = "https://api.codex.jaagrav.in";
-const CODEX_LANGS = { javascript: "js", python: "py", java: "java", cpp: "cpp", c: "c" };
+
+
 
 // ── Infrastructure error patterns ─────────────────────────────────────────────
 const INFRA_PATTERNS = [
@@ -212,19 +212,22 @@ async function handleRunCode(io, socket, { code, language, roomId, stdin = "", u
     { name: "Judge0",  fn: () => runViaJudge0(code, language, stdin)  },
     { name: "Piston",  fn: () => runViaPiston(code, language, stdin)  },
     { name: "Wandbox", fn: () => runViaWandbox(code, language, stdin) },
-    { name: "Codex",   fn: () => runViaCodex(code, language, stdin)   },
   ];
 
+  const logger = require("../utils/logger");
+
   let lastErr;
-  for (const { fn } of providers) {
+  for (const { name, fn } of providers) {
     try {
       const result = await fn();
-      return io.to(roomId).emit("code:output", { ...result, time: null, memory: null });
+      return io.to(roomId).emit("code:output", { ...result, provider: name, time: null, memory: null });
     } catch (err) {
       lastErr = err;
+      logger.warn(`[CodeRunner] ${name} failed: ${err.message}`);
     }
   }
 
+  logger.error("[CodeRunner] All providers failed:", lastErr?.message);
   io.to(roomId).emit("code:error", { message: `Code execution failed: ${lastErr?.message}` });
 }
 

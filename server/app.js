@@ -1,15 +1,17 @@
 // Express app factory — middleware and routes only
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const healthRoutes = require("./routes/healthRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
-const allowedOrigins = process.env.ALLOWED_ORIGIN 
-  ? process.env.ALLOWED_ORIGIN.split(',') 
+const allowedOrigins = process.env.CLIENT_ORIGIN 
+  ? process.env.CLIENT_ORIGIN.split(',') 
   : ["http://localhost:3000", "https://codesync-clients.onrender.com"];
 
+app.use(helmet());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 

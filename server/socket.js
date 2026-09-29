@@ -19,7 +19,7 @@ const { handleRunCode } = require("./controllers/codeController");
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+    logger.info("User connected:", socket.id);
 
     socket.on("join_room", (data) => handleJoinRoom(io, socket, data));
     socket.on("send_code", (data) => handleSendCode(socket, data));

@@ -8,8 +8,8 @@ const { PORT } = require("./config/constants");
 
 const server = http.createServer(app);
 
-const allowedOrigins = process.env.ALLOWED_ORIGIN 
-  ? process.env.ALLOWED_ORIGIN.split(',') 
+const allowedOrigins = process.env.CLIENT_ORIGIN 
+  ? process.env.CLIENT_ORIGIN.split(',') 
   : ["http://localhost:3000", "https://codesync-clients.onrender.com"];
 
 const io = new Server(server, {
@@ -19,8 +19,26 @@ const io = new Server(server, {
   },
 });
 
+const logger = require("./utils/logger");
+
 setupSocket(io);
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
+});
+
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
+});
+
+process.on("SIGINT", () => {
+  logger.info("SIGINT signal received: closing HTTP server");
+  server.close(() => {
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
 });
