@@ -24,6 +24,12 @@ function handleJoinRoom(io, socket, { roomId, username }) {
   if (typeof roomId !== 'string' || roomId.length > 50) return;
   if (typeof username !== 'string' || username.length > 50) return;
 
+  const clients = io.sockets.adapter.rooms.get(roomId);
+  if (clients && clients.size >= 10) {
+    socket.emit("room:full");
+    return;
+  }
+
   socket.join(roomId);
 
   const color = getNextColor(roomId);
