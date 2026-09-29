@@ -4,7 +4,7 @@ export default function TopBar({ roomId, copied, handleCopyRoom, language, setLa
     <>
       <div className="logo">
         <span className="logo-icon">✦</span>
-        CodeSync
+        CodeFusion
       </div>
       <div className="sep" />
 

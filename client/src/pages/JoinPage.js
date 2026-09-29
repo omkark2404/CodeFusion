@@ -5,7 +5,7 @@ export default function JoinPage({ username, setUsername, roomInput, setRoomInpu
       <div className="join-card">
         <div className="join-logo">
           <span className="join-logo-icon">✦</span>
-          <span>CodeSync</span>
+          <span>CodeFusion</span>
         </div>
         <p className="join-subtitle">Real-time collaborative code editor</p>
 

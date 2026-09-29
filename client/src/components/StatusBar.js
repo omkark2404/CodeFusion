@@ -2,7 +2,7 @@
 export default function StatusBar({ language, allUsers }) {
   return (
     <footer className="statusbar">
-      <span className="status-brand">✦ CodeSync</span>
+      <span className="status-brand">✦ CodeFusion</span>
       <span className="status-sep">|</span>
       <span>{language}</span>
       <span className="status-sep">|</span>

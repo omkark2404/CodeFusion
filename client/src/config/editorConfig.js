@@ -39,7 +39,7 @@ export const WARM_THEME = {
   },
 };
 
-export const STARTER_CODE = `// Welcome to CodeSync — Real-time Collaborative Editor
+export const STARTER_CODE = `// Welcome to CodeFusion — Real-time Collaborative Editor
 // Share your Room ID with teammates to code together!
 
 const express = require("express");

@@ -1,6 +1,6 @@
 // Service: WebRTC peer connection factory
 const STUN_SERVERS = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [{ urls: process.env.REACT_APP_STUN_SERVER || "stun:stun.l.google.com:19302" }],
 };
 
 /**

@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
+import { SERVER_URL } from "./services/socketService";
 
-const socket = io("http://localhost:5000");
+const socket = io(SERVER_URL);
 
 function EditorPage() {
   const { id } = useParams();
